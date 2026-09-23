@@ -191,12 +191,13 @@ const loader =
     new GLTFLoader();
 
 
-loader.load(
+const modelURL =
+    new URL(
+        "./ironman_mua3.glb",
+        import.meta.url
+    ).href;
 
-    "ironman_mua3.glb",
-
-
-    function (gltf) {
+ function (gltf) {
 
 
         ironMan =
