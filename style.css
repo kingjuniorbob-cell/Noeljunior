@@ -1331,21 +1331,6 @@ footer {
             auto !important;
     }
 }
-/* =============================
-   IRON MAN VISUAL
-============================= */
-
-.iron-visual {
-    height: calc(100vh - 80px);
-    position: sticky;
-    top: 80px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    perspective: 1000px;
-}
 
 
 
