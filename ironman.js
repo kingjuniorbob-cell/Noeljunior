@@ -1,16 +1,19 @@
 import * as THREE from "three";
-
-import { GLTFLoader } from
-    "three/addons/loaders/GLTFLoader.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 
 // ==========================================
 // GSAP
 // ==========================================
 
-gsap.registerPlugin(
-    ScrollTrigger
-);
+const gsap = window.gsap;
+const ScrollTrigger = window.ScrollTrigger;
+
+if (!gsap || !ScrollTrigger) {
+    console.error("GSAP or ScrollTrigger is not loaded");
+} else {
+    gsap.registerPlugin(ScrollTrigger);
+}
 
 
 // ==========================================
@@ -26,9 +29,17 @@ const container =
 const heroText =
     document.querySelector("#heroText");
 
+if (!canvas) {
+    throw new Error("#ironCanvas was not found");
+}
+
+if (!container) {
+    throw new Error("#helmet was not found");
+}
+
 
 // ==========================================
-// SCENE
+// THREE.JS SCENE
 // ==========================================
 
 const scene =
@@ -60,43 +71,31 @@ camera.position.set(
 
 const renderer =
     new THREE.WebGLRenderer({
-
-        canvas,
-
+        canvas: canvas,
         alpha: true,
-
         antialias: true
-
     });
 
-
 renderer.setPixelRatio(
-
     Math.min(
         window.devicePixelRatio,
         2
     )
-
 );
-
 
 renderer.outputColorSpace =
     THREE.SRGBColorSpace;
 
-
 renderer.toneMapping =
     THREE.ACESFilmicToneMapping;
-
 
 renderer.toneMappingExposure =
     1.25;
 
 
 // ==========================================
-// LIGHTING
+// LIGHTS
 // ==========================================
-
-// soft white overall light
 
 const ambientLight =
     new THREE.AmbientLight(
@@ -104,12 +103,8 @@ const ambientLight =
         1.8
     );
 
-scene.add(
-    ambientLight
-);
+scene.add(ambientLight);
 
-
-// RED KEY LIGHT
 
 const redLight =
     new THREE.PointLight(
@@ -124,12 +119,8 @@ redLight.position.set(
     4
 );
 
-scene.add(
-    redLight
-);
+scene.add(redLight);
 
-
-// WHITE RIM LIGHT
 
 const whiteLight =
     new THREE.PointLight(
@@ -144,12 +135,8 @@ whiteLight.position.set(
     3
 );
 
-scene.add(
-    whiteLight
-);
+scene.add(whiteLight);
 
-
-// TOP LIGHT
 
 const topLight =
     new THREE.DirectionalLight(
@@ -163,9 +150,7 @@ topLight.position.set(
     4
 );
 
-scene.add(
-    topLight
-);
+scene.add(topLight);
 
 
 // ==========================================
@@ -175,21 +160,21 @@ scene.add(
 const modelGroup =
     new THREE.Group();
 
-scene.add(
-    modelGroup
-);
+scene.add(modelGroup);
 
-
-let ironMan;
+let ironMan = null;
 
 
 // ==========================================
-// LOAD MODEL
+// LOAD GLB MODEL
 // ==========================================
 
 const loader =
     new GLTFLoader();
 
+
+// IMPORTANT:
+// GLB is beside ironman.js in your GitHub repository
 
 const modelURL =
     new URL(
@@ -197,12 +182,26 @@ const modelURL =
         import.meta.url
     ).href;
 
- function (gltf) {
 
+console.log(
+    "Loading Iron Man from:",
+    modelURL
+);
+
+
+loader.load(
+
+    modelURL,
+
+    // SUCCESS
+    function (gltf) {
+
+        console.log(
+            "GLB FILE LOADED"
+        );
 
         ironMan =
             gltf.scene;
-
 
         modelGroup.add(
             ironMan
@@ -210,7 +209,7 @@ const modelURL =
 
 
         // ==================================
-        // MODEL BOUNDING BOX
+        // GET MODEL SIZE
         // ==================================
 
         const box =
@@ -219,12 +218,10 @@ const modelURL =
                     ironMan
                 );
 
-
         const center =
             box.getCenter(
                 new THREE.Vector3()
             );
-
 
         const size =
             box.getSize(
@@ -232,65 +229,64 @@ const modelURL =
             );
 
 
+        console.log(
+            "MODEL SIZE:",
+            size
+        );
+
+
         // ==================================
         // CENTER MODEL
         // ==================================
 
         ironMan.position.set(
-
             -center.x,
-
             -center.y,
-
             -center.z
-
         );
 
 
         // ==================================
-        // AUTO SCALE
+        // SCALE MODEL
         // ==================================
 
         const largestSide =
             Math.max(
-
                 size.x,
-
                 size.y,
-
                 size.z
-
             );
 
-
         const desiredSize =
-            5.2;
-
+            4.5;
 
         const scale =
             desiredSize /
             largestSide;
-
 
         modelGroup.scale.setScalar(
             scale
         );
 
 
-        // CENTER OF SCREEN
+        // ==================================
+        // MODEL POSITION
+        // ==================================
 
-       modelGroup.position.set(
-    0,
-    -1.0,
-    0
-);
+        modelGroup.position.set(
+            0,
+            -0.5,
+            0
+        );
 
-// Start from front view
-modelGroup.rotation.set(
-    0,
-    Math.PI,
-    0
-);
+
+        // Start facing front
+
+        modelGroup.rotation.set(
+            0,
+            Math.PI,
+            0
+        );
 
 
         setupScrollAnimation();
@@ -303,13 +299,31 @@ modelGroup.rotation.set(
     },
 
 
-    undefined,
+    // LOADING
+    function (xhr) {
+
+        if (xhr.total > 0) {
+
+            const percent =
+                (
+                    xhr.loaded /
+                    xhr.total
+                ) * 100;
+
+            console.log(
+                `Loading model: ${percent.toFixed(0)}%`
+            );
+
+        }
+
+    },
 
 
+    // ERROR
     function (error) {
 
         console.error(
-            "MODEL ERROR",
+            "IRON MAN MODEL ERROR:",
             error
         );
 
@@ -319,162 +333,138 @@ modelGroup.rotation.set(
 
 
 // ==========================================
-// SCROLL ANIMATION
+// SCROLL CONTROL
 // ==========================================
 
 function setupScrollAnimation() {
 
-
-    // --------------------------------------
-    // EXACT 360° ROTATION
-    // --------------------------------------
-
-    gsap.to(
-    modelGroup.rotation,
-    {
-        y: Math.PI * 3,
-
-            ease:
-                "none",
+    if (!gsap || !ScrollTrigger) {
+        return;
+    }
 
 
-            scrollTrigger: {
-
-                trigger:
-                    ".hero",
-
-                start:
-                    "top top",
-
-                end:
-                    "bottom bottom",
-
-                scrub:
-                    1
-
-            }
-
-        }
-
-    );
-
-
-    // --------------------------------------
-    // SLIGHT CAMERA DEPTH
-    // --------------------------------------
+    // ======================================
+    // 360 DEGREE ROTATION
+    // ======================================
 
     gsap.to(
-
-        camera.position,
-
+        modelGroup.rotation,
         {
 
-            z: 4.25,
+            // Starts at PI.
+            // PI -> 3PI = one complete 360° rotation.
 
-            ease:
-                "none",
+            y: Math.PI * 3,
 
+            ease: "none",
 
             scrollTrigger: {
 
-                trigger:
-                    ".hero",
+                trigger: ".hero",
 
-                start:
-                    "top top",
+                start: "top top",
 
-                end:
-                    "bottom bottom",
+                end: "bottom bottom",
 
-                scrub:
-                    1
+                scrub: 1
 
             }
 
         }
-
     );
 
 
-    // --------------------------------------
-    // HERO TEXT DISAPPEARS
-    // --------------------------------------
+    // ======================================
+    // SMALL CAMERA ZOOM
+    // ======================================
+
+    gsap.to(
+        camera.position,
+        {
+
+            z: 7,
+
+            ease: "none",
+
+            scrollTrigger: {
+
+                trigger: ".hero",
+
+                start: "top top",
+
+                end: "bottom bottom",
+
+                scrub: 1
+
+            }
+
+        }
+    );
+
+
+    // ======================================
+    // TEXT FADE
+    // ======================================
 
     if (heroText) {
 
         gsap.to(
-
             heroText,
-
             {
 
                 x: -120,
 
                 opacity: 0,
 
-                ease:
-                    "none",
-
+                ease: "none",
 
                 scrollTrigger: {
 
-                    trigger:
-                        ".hero",
+                    trigger: ".hero",
 
-                    start:
-                        "top top",
+                    start: "top top",
 
-                    end:
-                        "45% top",
+                    end: "45% top",
 
-                    scrub:
-                        true
+                    scrub: true
 
                 }
 
             }
-
         );
 
     }
 
 
-    // --------------------------------------
-    // LIGHT INTENSITY DURING SCROLL
-    // --------------------------------------
+    // ======================================
+    // RED LIGHT INTENSITY
+    // ======================================
 
     gsap.to(
-
         redLight,
-
         {
 
-            intensity:
-                55,
+            intensity: 55,
 
-            ease:
-                "none",
-
+            ease: "none",
 
             scrollTrigger: {
 
-                trigger:
-                    ".hero",
+                trigger: ".hero",
 
-                start:
-                    "top top",
+                start: "top top",
 
-                end:
-                    "bottom bottom",
+                end: "bottom bottom",
 
-                scrub:
-                    true
+                scrub: true
 
             }
 
         }
-
     );
+
+
+    ScrollTrigger.refresh();
 
 }
 
@@ -485,42 +475,57 @@ function setupScrollAnimation() {
 
 function resize() {
 
-
-    if (!container) {
-        return;
-    }
-
-
     const width =
         container.clientWidth;
-
 
     const height =
         container.clientHeight;
 
-
     if (
-        width === 0 ||
-        height === 0
+        width <= 0 ||
+        height <= 0
     ) {
-
         return;
-
     }
 
 
-    renderer.setSize(
-        width,
-        height,
-        false
-    );
+    const pixelWidth =
+        Math.floor(
+            width *
+            Math.min(
+                window.devicePixelRatio,
+                2
+            )
+        );
+
+    const pixelHeight =
+        Math.floor(
+            height *
+            Math.min(
+                window.devicePixelRatio,
+                2
+            )
+        );
 
 
-    camera.aspect =
-        width / height;
+    if (
+        canvas.width !== pixelWidth ||
+        canvas.height !== pixelHeight
+    ) {
 
+        renderer.setSize(
+            width,
+            height,
+            false
+        );
 
-    camera.updateProjectionMatrix();
+        camera.aspect =
+            width /
+            height;
+
+        camera.updateProjectionMatrix();
+
+    }
 
 }
 
@@ -531,14 +536,11 @@ function resize() {
 
 function animate() {
 
-
     requestAnimationFrame(
         animate
     );
 
-
     resize();
-
 
     renderer.render(
         scene,
@@ -546,6 +548,5 @@ function animate() {
     );
 
 }
-
 
 animate();
