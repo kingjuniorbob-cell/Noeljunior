@@ -510,30 +510,4 @@ document.head.appendChild(
    
 
 
-    // ==========================
-    // TEXT
-    // ==========================
-
-    const textMove =
-        progress * -250;
-
-    scrollHeroText.style.transform =
-        `translateX(${textMove}px)`;
-
-
-    // ==========================
-    // FADE
-    // ==========================
-
-    scrollHeroText.style.opacity =
-        Math.max(
-            0,
-            1 - progress * 1.5
-        );
-
-    scrollHelmet.style.opacity =
-        Math.max(
-            0,
-            1 - progress * 1.15
-        );
-
+   
