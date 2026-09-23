@@ -193,7 +193,7 @@ const loader =
 
 loader.load(
 
-    "models/ironman_mua3.glb",
+    "ironman_mua3.glb",
 
 
     function (gltf) {
